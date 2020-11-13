@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en" data-theme=""><head>
+    <title> Jonathan Pelletier | Dev Workflow for Custom Resources </title>
+
+    
+    <meta charset="utf-8"><meta name="generator" content="Hugo 0.78.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="description" content="By Jonathan Pelletier, 5x AWS Certified Solution Architect">
+    
+    <link rel="stylesheet"
+          href="https://cafecloud.ca/css/style.min.ae4af30f6a89627b05def70e914c14cbb53a71d28a88ec8d87a40ecc7c2778e2.css"
+          integrity="sha256-rkrzD2qJYnsF3vcOkUwUy7U6cdKKiOyNh6QOzHwneOI="
+          crossorigin="anonymous"
+          type="text/css"><link rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" 
+    integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" 
+    crossorigin="anonymous" />
+
+    
+    <link rel="shortcut icon" href="https://cafecloud.ca/favicons/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://cafecloud.ca/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://cafecloud.ca/favicons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://cafecloud.ca/favicons/favicon-16x16.png">
+
+    <link rel="canonical" href="https://cafecloud.ca/post/aws-sam-cfn-cr-template/">
+
+    
+    
+    
+    
+    <script type="text/javascript"
+            src="https://cafecloud.ca/js/anatole-header.min.e782db136ec18d105a4552702eac49f4620d6867da3fbf808bd53e806c96be6e.js"
+            integrity="sha256-54LbE27BjRBaRVJwLqxJ9GINaGfaP7&#43;Ai9U&#43;gGyWvm4="
+            crossorigin="anonymous"></script>
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Dev Workflow for Custom Resources"/>
+<meta name="twitter:description" content="This post describe a proposed workflow to easily create the assets required to develop, test and deploy an AWS CloudFormation Custom Resource backed by python lambda functions"/>
+
+</head>
+<body><div class="sidebar animated fadeInDown">
+    <div class="logo-title">
+        <div class="title">
+            <img src="https://cafecloud.ca/images/profile.png" alt="profile picture">
+            <h3 title=""><a href="/">Cafe Cloud</a></h3>
+            <div class="description">
+                <p>By Jonathan Pelletier, 5x AWS Certified Solution Architect</p>
+            </div>
+        </div>
+    </div>
+    <ul class="social-links">
+        
+            <li>
+                <a href="https://www.linkedin.com/in/jonathan-p-089033186/" rel="me" aria-label="Linkedin">
+                    <i class="fab fa-linkedin fa-2x" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            <li>
+                <a href="https://github.com/cafecloud-blog" rel="me" aria-label="GitHub">
+                    <i class="fab fa-github fa-2x" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            <li>
+                <a href="mailto:info@cafecloud.ca" rel="me" aria-label="e-mail">
+                    <i class="fas fa-envelope fa-2x" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+    </ul>
+    <div class="footer">
+        <div class="by_farbox">&copy; Jonathan Pelletier 2020 </div>
+    </div>
+</div>
+<div class="main">
+    <div class="page-top animated fadeInDown">
+    <a role="button" class="navbar-burger" data-target="navMenu" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+    </a>
+    <ul class="nav" id="navMenu">
+        
+        
+            
+            <li><a 
+                   href="/"
+                        
+                   title="">Home</a></li>
+        
+            
+            <li><a 
+                   href="/post/"
+                        
+                   title="">Posts</a></li>
+        
+            
+            <li><a 
+                   href="/about/"
+                        
+                   title="">About</a></li>
+        
+        
+        <li class="theme-switch-item">
+            <a class="theme-switch" title="Switch Theme">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+    <div class="autopagerize_page_element">
+        <div class="content">
+    <div class="post animated fadeInDown">
+        <div class="post-content">
+
+            <div class="post-title">
+                <h3>Dev Workflow for Custom Resources</h3>
+                
+                    <div class="info">
+                        <em class="fas fa-calendar-day"></em>
+                        <span class="date">Wed, Nov 11, 2020</span>
+                        <em class="fas fa-stopwatch"></em>
+                        <span class="reading-time">6-minute read</span>
+                    </div>
+                
+            </div>
+
+            <p>AWS CloudFormation allows users to declare what resources are required in a project. When using CloudFormation, a developer&rsquo;s responsibility is to describe <em>what</em> he wants while letting the service figure out <em>how</em> to get there. He uses the JSON/YAML schema for resource specification, submits it for stack creation, and lets it handle the management of the lifecycle events in the infrastructure (e.g., create/update/delete events).</p>
+<p>This workflow will work out of the box for most projects, but there are some examples where CloudFormation&rsquo;s coverage will fall short for a use case. Imagine, for example, a case where a developer wants to declare an S3 bucket with initial content. This functionality does not exist in Cloudformation today, and to accomplish that, we must tell CloudFormation how. That is where a <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-custom-resources.html">CloudFormation custom resource</a> comes into play; to specify custom resource logic.</p>
+<p>Creating a custom resource is much more work than merely using an available one, and this alone can be enough to discourage their usage entirely. After all, a custom resource requires a developer to:</p>
+<ol>
+<li>Create some code for a lambda function that handles the lifecycle of the resource.</li>
+<li>Test the code, ideally locally, so that the dev-test feedback loop is quick.</li>
+<li>Deploy the lambda function to an AWS target environment automatically.</li>
+</ol>
+<p>This article will show a functional workflow that accomplishes all of this in a relatively frictionless manner. The workflow will show how to use different tools to set up, <em>in under a minute</em>, a working and deployable CloudFormation custom resource project.</p>
+<p>By the end of this post, the idea of creating new AWS CloudFormation custom resources should feel more approachable and less daunting. Let us get started!</p>
+<h2 id="overview-of-the-workflow">Overview of the workflow</h2>
+<p>Here is a list of the tools that the project will use for creating the custom resource:</p>
+<ol>
+<li><a href="https://www.python.org/downloads/">python3.8</a>: for lambda code.</li>
+<li><a href="https://cookiecutter.readthedocs.io/en/1.7.2/">cookiecutter</a>: for project templating.</li>
+<li><a href="https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html">sam cli</a>: for declaring resources, testing and deploying the lambda functions.</li>
+<li><a href="https://pypi.org/project/crhelper/">crhelper module</a>: for managing some aspect of the resource lifecycle.</li>
+<li><a href="https://docs.pipenv.org/">pipenv</a>: for managing dev environment dependencies.</li>
+<li><a href="https://docs.pytest.org/en/stable/">pytest</a>: for unit testing.</li>
+<li><a href="https://docs.docker.com/get-docker/">docker</a>: for local lambda runtime emulation.</li>
+<li><a href="https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html">aws cli</a>: for deploying a CloudFormation stack using the custom resource.</li>
+</ol>
+<p>The instructions of this post were tested on MacOS Catalina 10.15.7</p>
+<p>To create a custom resource, the workflow steps through the following stages: <strong>project setup</strong>, <strong>coding</strong>, <strong>testing</strong> and <strong>deploying</strong>. We describe the project setup next.</p>
+<h3 id="project-setup">Project setup</h3>
+<p>The <a href="https://aws.amazon.com/serverless/sam/">Serverless Application Model</a> (SAM) is a framework for creating serverless applications. It is fair to say that a CloudFormation custom resource is a serverless application, albeit a straightforward one.
+The SAM framework allows developers to create a serverless project using the sam cli tool. Using the <a href="https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html">sam cli</a>, a project is initialized like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sam init 
+</code></pre></div><p>Out of the box, the sam cli supports different serverless project templates. For python3.8, there are quickstart templates for serverless backends using: API Gateway, EventBridge, Step functions and others. The quickstarts all provide for a minimal and deployable serverless project. However, none of them quite fit our use case for custom resources.</p>
+<p>The sam cli uses <a href="https://cookiecutter.readthedocs.io/en/1.7.2/">cookiecutter</a> to create serverless projects. To help with the setup of custom resource projects, use a purpose-built template for this type of project available <a href="https://github.com/cafecloud-blog/cookiecutter-aws-sam-cfn-cr">here</a>. Go ahead and create locally a new project, based on the template, using the following command:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sam init --location gh:cafecloud-blog/cookiecutter-aws-sam-cfn-cr
+</code></pre></div><p>With a project named CafeCloudCustomResource, this is the project structure created:</p>
+<figure>
+    <img src="/images/cr_sample_project.png"/> 
+</figure>
+
+<p>Now that the local file structure for a custom resource project is in place,
+the coding can start.</p>
+<h3 id="coding">Coding</h3>
+<p>The project template provides a Pipfile that specify the dependencies for developing and testing a lambda function that targets the python3.8 runtime. The first thing to do is to configure the dev environment
+using <a href="https://pypi.org/project/pipenv/">pipenv</a>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cd &lt;PROJECT ROOT FOLDER&gt;
+pipenv install --dev
+</code></pre></div><p>Furthermore, activate the environment:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">pipenv shell
+</code></pre></div><p>Now we can start adding custom logic. The lambda code for a <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-custom-resources.html">custom resource</a> must handle the create/update/delete events that CloudFormation sends. The crhelper python module helps handle undifferentiated heavy-lifting, such as required responses to CloudFormation once the function has executed the custom logic.</p>
+<script type="application/javascript" src="https://gist.github.com/cafecloud-blog/b34c3cb9f8e5ad50a37b517d1e400359.js"></script>
+
+<p>More details on the handling of events and the usage of crhelper can be found <a href="https://aws.amazon.com/blogs/infrastructure-and-automation/aws-cloudformation-custom-resource-creation-with-python-aws-lambda-and-crhelper/">here</a>.</p>
+<p>Depending on the type of custom resource needed, not all lifecycle events will need custom handler logic. Custom resources that carry out a computation or that provide a one-time side effect can handle the delete
+event has shown below:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#a6e22e">@helper.delete</span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">delete</span>(event, context):
+    <span style="color:#66d9ef">pass</span>
+</code></pre></div><h3 id="testing">Testing</h3>
+<p>Developers should test the logic of their custom resources to ensure that it is bug-free. The project comes with the ability to perform unit tests easily using pytest. Invoke the project unit tests suit by using the following command:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">python -m pytest tests/ -v
+</code></pre></div><p>pytest will print a report in the console. Output for the base project will look like this:</p>
+<figure>
+    <img src="/images/cr_unit_test_pass.png"/> 
+</figure>
+
+<p>Aside from unit testing, sam can package the lambda code and run it locally in a <a href="https://docs.docker.com/get-started/overview/">docker</a> container built from an image designed to emulate the real AWS Lambda runtime. First, create the code package with the build command:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sam build
+</code></pre></div><p>Once the build completes, the assets will be located in a local hidden directory named .aws-sam, and they will be ready to be packaged in a docker container.</p>
+<p>When CloudFormation invokes a custom resource lambda function, it passes it an event payload. The project template comes with a mock event located in events/create_event.json that the sam cli uses to simulate the process when invoking the lambda locally.</p>
+<script type="application/javascript" src="https://gist.github.com/cafecloud-blog/f520ab465d668de1cee0ebe7d6ca53c6.js"></script>
+
+<p>Use the sam cli to perform the local invocation with the mock event:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sam local invoke -e events/create_event.json
+</code></pre></div><p>The result will be similar to this:</p>
+<figure>
+    <img src="/images/cr_local_invoke_success.png"/> 
+</figure>
+
+<p>With code written, unit tested and ran locally, the next step is deploying.</p>
+<h3 id="deploying">Deploying</h3>
+<p>Assuming AWS account credentials are on the local machine, the sam cli can deploy the project:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sam deploy --guided
+</code></pre></div><p>After answering a few deployment wizard questions and allowing for time to deploy, a CloudFormation stack will appear in the target account:</p>
+<figure>
+    <img src="/images/cr_demo_stack.png"/> 
+</figure>
+
+<p>At this point, a lambda function that handles the lifecycle of a CloudFormation custom resource is in the target account. Next, we explore how consumers use the custom resource.</p>
+<h3 id="using-the-resource-in-a-template">Using the resource in a template</h3>
+<p>Now that the custom resource has been successfully deployed, it can be used in a CloudFormation template. The following snippet shows a template that instantiates the project&rsquo;s resource:</p>
+<script type="application/javascript" src="https://gist.github.com/cafecloud-blog/c40421201bf2301761d0bf1a12b714e7.js"></script>
+
+<p>Deploy the template with the <a href="https://docs.aws.amazon.com/cli/latest/reference/cloudformation/deploy/index.html">aws cli</a>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws cloudformation deploy --template-file use_custom_resource.yaml --stack-name CafeCloudDemoStack --parameter-overrides CustomResourceFunctionArn<span style="color:#f92672">=</span>&lt;YOUR LAMBDA ARN&gt;
+</code></pre></div><h2 id="conclusion">Conclusion</h2>
+<p>This blog post shows how developers can use a set of tools to enact a simple workflow for creating CloudFormation custom resources. Developers can use this post as a reference for creating a fully deployable project <em>in minutes</em>.</p>
+<p>Hopefully, this walkthrough makes the idea of creating CloudFormation custom resources less daunting.</p>
+<p>Happy CloudFormationning!</p>
+
+        </div>
+        <div class="post-footer">
+            <div class="info">
+                <span class="separator"><a class="category" href="/categories/devops/">DevOps</a></span>
+
+                <span class="separator"><a class="tag" href="/tags/cloudformation/">cloudformation</a><a class="tag" href="/tags/serverless/">serverless</a><a class="tag" href="/tags/lambda/">lambda</a><a class="tag" href="/tags/python/">python</a></span>
+
+            </div>
+        </div>
+
+        
+            
+        
+    </div>
+
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript"
+        src="https://cafecloud.ca/js/jquery.min.86b1e8f819ee2d9099a783e50b49dff24282545fc40773861f9126b921532e4c.js"
+        integrity="sha256-hrHo&#43;BnuLZCZp4PlC0nf8kKCVF/EB3OGH5EmuSFTLkw="
+        crossorigin="anonymous"></script>
+
+
+
+
+<script type="text/javascript"
+        src="https://cafecloud.ca/js/bundle.min.0f9c74cb78f13d1f15f33daff4037c70354f98acfbb97a6f61708966675c3cae.js"
+        integrity="sha256-D5x0y3jxPR8V8z2v9AN8cDVPmKz7uXpvYXCJZmdcPK4="
+        crossorigin="anonymous"></script>
+
+<script type="text/javascript"
+        src="https://cafecloud.ca/js/medium-zoom.min.92f21c856129f84aeb719459b3e6ac621a3032fd7b180a18c04e1d12083f8aba.js"
+        integrity="sha256-kvIchWEp&#43;ErrcZRZs&#43;asYhowMv17GAoYwE4dEgg/iro="
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

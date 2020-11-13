@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>The Cafe Cloud Blog</title>
+    <link>https://cafecloud.ca/</link>
+    <description>Recent content on The Cafe Cloud Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Wed, 11 Nov 2020 13:52:42 -0500</lastBuildDate><atom:link href="https://cafecloud.ca/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Dev Workflow for Custom Resources</title>
+      <link>https://cafecloud.ca/post/aws-sam-cfn-cr-template/</link>
+      <pubDate>Wed, 11 Nov 2020 13:52:42 -0500</pubDate>
+      
+      <guid>https://cafecloud.ca/post/aws-sam-cfn-cr-template/</guid>
+      <description>AWS CloudFormation allows users to declare what resources are required in a project. When using CloudFormation, a developer&amp;rsquo;s responsibility is to describe what he wants while letting the service figure out how to get there. He uses the JSON/YAML schema for resource specification, submits it for stack creation, and lets it handle the management of the lifecycle events in the infrastructure (e.</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://cafecloud.ca/about/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://cafecloud.ca/about/</guid>
+      <description>About Hello, my name is Jonathan Pelletier, and I am a remotely working Cloud Solutions Architect based in Montreal, Canada.
+My primary focus is working with many different people from various business fields and realizing their visions by using the AWS Public Cloud platform as a primary tool.
+This blog is about sharing what I learn and do on AWS.</description>
+    </item>
+    
+  </channel>
+</rss>
