@@ -125,7 +125,11 @@
                 
             </div>
 
-            <p>AWS CloudFormation allows users to declare what resources are required in a project. When using CloudFormation, a developer&rsquo;s responsibility is to describe <em>what</em> he wants while letting the service figure out <em>how</em> to get there. He uses the JSON/YAML schema for resource specification, submits it for stack creation, and lets it handle the management of the lifecycle events in the infrastructure (e.g., create/update/delete events).</p>
+            <figure>
+    <img src="/images/cr_top_presentation.jpg"/> 
+</figure>
+
+<p>AWS CloudFormation allows users to declare what resources are required in a project. When using CloudFormation, a developer&rsquo;s responsibility is to describe <em>what</em> he wants while letting the service figure out <em>how</em> to get there. He uses the JSON/YAML schema for resource specification, submits it for stack creation, and lets it handle the management of the lifecycle events in the infrastructure (e.g., create/update/delete events).</p>
 <p>This workflow will work out of the box for most projects, but there are some examples where CloudFormation&rsquo;s coverage will fall short for a use case. Imagine, for example, a case where a developer wants to declare an S3 bucket with initial content. This functionality does not exist in Cloudformation today, and to accomplish that, we must tell CloudFormation how. That is where a <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-custom-resources.html">CloudFormation custom resource</a> comes into play; to specify custom resource logic.</p>
 <p>Creating a custom resource is much more work than merely using an available one, and this alone can be enough to discourage their usage entirely. After all, a custom resource requires a developer to:</p>
 <ol>
